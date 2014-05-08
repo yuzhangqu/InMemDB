@@ -3,6 +3,7 @@
 using std::unordered_map;
 using std::string;
 using std::queue;
+using std::vector;
 
 unordered_map<int, string> db; //DataBase
 
@@ -92,6 +93,7 @@ void *worker_start(void *arg) {
 void *handle_start(void *arg) {
     queue<struct op> *packs = new queue<struct op>[NUM_WORKERS]; //Decompose the transaction into small parts, and store into the corresponding position in packs.
     queue<struct op> *myops = (queue<struct op> *)arg;
+    vector<int> reg; //Remember which workers shall be used.
     void *worker_result;
     queue<struct ret> *tmp;
     queue<struct ret> info; //Store the result of each worker into this variable.
@@ -116,31 +118,28 @@ void *handle_start(void *arg) {
     for (int i = 0; i < NUM_WORKERS; i++) {
         if (!packs[i].empty()) {
             pthread_mutex_lock(&locks[i]);
+            reg.push_back(i);
         }
     }
     //Phase 2: Start workers.
-    for (int i = 0; i < NUM_WORKERS; i++) {
-        if (!packs[i].empty()) {
-            rc = pthread_create(&workers[i], &worker_attr, worker_start, (void *)(packs + i));
-            if (rc) {
-                printf("ERROR: worker init failed. %s\n", strerror(rc));
-            }
+    for (long i = 0; i < reg.size(); i++) {
+        rc = pthread_create(&workers[i], &worker_attr, worker_start, (void *)(packs + i));
+        if (rc) {
+            printf("ERROR: worker init failed. %s\n", strerror(rc));
         }
     }
     //Phase 3: Collect the results.
-    for (int i = 0; i < NUM_WORKERS; i++) {
-        if (!packs[i].empty()) {
-            rc = pthread_join(workers[i], &worker_result);
-            if (rc) {
-                printf("Worker fail to end.\n");
-            }
-            pthread_mutex_unlock(&locks[i]);
-            tmp = (queue<struct ret> *)worker_result;
-            while (!tmp->empty()) {
-                aret = tmp->front();
-                info.push(ret(aret.key, aret.value));
-                tmp->pop();
-            }
+    for (long i = 0; i < reg.size(); i++) {
+        rc = pthread_join(workers[i], &worker_result);
+        if (rc) {
+            printf("Worker fail to end.\n");
+        }
+        pthread_mutex_unlock(&locks[i]);
+        tmp = (queue<struct ret> *)worker_result;
+        while (!tmp->empty()) {
+            aret = tmp->front();
+            info.push(ret(aret.key, aret.value));
+            tmp->pop();
         }
     }
     //Show the result, test only.
@@ -181,8 +180,6 @@ int main(int argc, char *argv[]) {
         printf("ERROR: handle create fail.\n");
         exit(-1);
     }
-    
-    printf("SUCCESS!Handle start!\n");
     rc = pthread_join(handles[0], NULL);
     pthread_exit(NULL);
 }

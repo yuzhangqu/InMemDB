@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <queue>
+#include <vector>
 #include <unordered_map>
 
 #define NUM_WORKERS 8
