@@ -1,0 +1,29 @@
+package InMemDB;
+
+message TransRequest {
+    message Op {
+        enum Code {
+            GET = 0;
+            PUT = 1;
+            GETRANGE = 2;
+        }
+        required Code code = 1;
+        required int32 key = 2;
+        optional int32 key2 = 3 [default = 0];
+        optional string value = 4 [default = ""];
+    }
+    repeated Op op = 1;
+}
+
+message TransResponse {
+    message Ret {
+        required int32 key = 1;
+        required string value = 2;
+    }
+    repeated Ret ret = 1;
+}
+
+service TransService {
+    rpc Trans (TransRequest) returns (TransResponse);
+}
+
