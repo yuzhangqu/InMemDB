@@ -6,12 +6,15 @@
 #include <queue>
 #include <vector>
 #include <unordered_map>
+#include "TransMessage.pb.h"
+#include "TransMessage.h"
 
 #define NUM_WORKERS 8
-#define NUM_HANDLES 10
+#define NUM_PARTITION 50
 
 enum xxop {
     GET,
     PUT,
     GETRANGE
 };
+

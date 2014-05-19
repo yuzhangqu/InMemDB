@@ -3,9 +3,9 @@ package InMemDB;
 message TransRequest {
     message Op {
         enum Code {
-            GET = 0;
-            PUT = 1;
-            GETRANGE = 2;
+            GET = 1;
+            PUT = 2;
+            GETRANGE = 3;
         }
         required Code code = 1;
         required int32 key = 2;
